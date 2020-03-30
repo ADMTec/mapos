@@ -1,6 +1,8 @@
-<?php if (!defined('BASEPATH')) { exit('No direct script access allowed'); }
+<?php if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
 
-class Arquivos extends CI_Controller
+class Arquivos extends MY_Controller
 {
 
     /**
@@ -13,12 +15,7 @@ class Arquivos extends CI_Controller
     {
         parent::__construct();
 
-        if ((!session_id()) || (!$this->session->userdata('logado'))) {
-            redirect('mapos/login');
-        }
-
-        $this->load->helper(array('codegen_helper'));
-        $this->load->model('arquivos_model', '', true);
+        $this->load->model('arquivos_model');
         $this->data['menuArquivos'] = 'Arquivos';
     }
 
@@ -28,7 +25,6 @@ class Arquivos extends CI_Controller
     }
     public function gerenciar()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vArquivo')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para visualizar arquivos.');
             redirect(base_url());
@@ -41,36 +37,14 @@ class Arquivos extends CI_Controller
         $ate = $this->input->get('data2');
 
         if ($pesquisa == null && $de == null && $ate == null) {
+            $this->data['configuration']['base_url'] = site_url('arquivos/gerenciar');
+            $this->data['configuration']['total_rows'] = $this->arquivos_model->count('documentos');
 
-            $config['base_url'] = base_url() . 'index.php/arquivos/gerenciar';
-            $config['total_rows'] = $this->arquivos_model->count('documentos');
-            $config['per_page'] = 10;
-            $config['next_link'] = 'Próxima';
-            $config['prev_link'] = 'Anterior';
-            $config['full_tag_open'] = '<div class="pagination alternate"><ul>';
-            $config['full_tag_close'] = '</ul></div>';
-            $config['num_tag_open'] = '<li>';
-            $config['num_tag_close'] = '</li>';
-            $config['cur_tag_open'] = '<li><a style="color: #2D335B"><b>';
-            $config['cur_tag_close'] = '</b></a></li>';
-            $config['prev_tag_open'] = '<li>';
-            $config['prev_tag_close'] = '</li>';
-            $config['next_tag_open'] = '<li>';
-            $config['next_tag_close'] = '</li>';
-            $config['first_link'] = 'Primeira';
-            $config['last_link'] = 'Última';
-            $config['first_tag_open'] = '<li>';
-            $config['first_tag_close'] = '</li>';
-            $config['last_tag_open'] = '<li>';
-            $config['last_tag_close'] = '</li>';
+            $this->pagination->initialize($this->data['configuration']);
 
-            $this->pagination->initialize($config);
-
-            $this->data['results'] = $this->arquivos_model->get('documentos', 'idDocumentos,documento,descricao,file,path,url,cadastro,categoria,tamanho,tipo', '', $config['per_page'], $this->uri->segment(3));
+            $this->data['results'] = $this->arquivos_model->get('documentos', '*', '', $this->data['configuration']['per_page'], $this->uri->segment(3));
         } else {
-
             if ($de != null) {
-
                 $de = explode('/', $de);
                 $de = $de[2] . '-' . $de[1] . '-' . $de[0];
 
@@ -86,12 +60,11 @@ class Arquivos extends CI_Controller
         }
 
         $this->data['view'] = 'arquivos/arquivos';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function adicionar()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aArquivo')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar arquivos.');
             redirect(base_url());
@@ -105,7 +78,6 @@ class Arquivos extends CI_Controller
         if ($this->form_validation->run() == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
             $arquivo = $this->do_upload();
 
             $file = $arquivo['file_name'];
@@ -123,7 +95,7 @@ class Arquivos extends CI_Controller
                 $data = $data[2] . '-' . $data[1] . '-' . $data[0];
             }
 
-            $data = array(
+            $data = [
                 'documento' => $this->input->post('nome'),
                 'descricao' => $this->input->post('descricao'),
                 'file' => $file,
@@ -132,26 +104,25 @@ class Arquivos extends CI_Controller
                 'cadastro' => $data,
                 'tamanho' => $tamanho,
                 'tipo' => $tipo,
-            );
+            ];
 
             if ($this->arquivos_model->add('documentos', $data) == true) {
                 $this->session->set_flashdata('success', 'Arquivo adicionado com sucesso!');
 
                 log_info('Adicionou um arquivo');
 
-                redirect(base_url() . 'index.php/arquivos/adicionar/');
+                redirect(site_url('arquivos/adicionar/'));
             } else {
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro.</p></div>';
             }
         }
 
         $this->data['view'] = 'arquivos/adicionarArquivo';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function editar()
     {
-
         if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
@@ -169,7 +140,6 @@ class Arquivos extends CI_Controller
         if ($this->form_validation->run() == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
             $data = $this->input->post('data');
             if ($data == null) {
                 $data = date('Y-m-d');
@@ -178,16 +148,16 @@ class Arquivos extends CI_Controller
                 $data = $data[2] . '-' . $data[1] . '-' . $data[0];
             }
 
-            $data = array(
+            $data = [
                 'documento' => $this->input->post('nome'),
                 'descricao' => $this->input->post('descricao'),
                 'cadastro' => $data,
-            );
+            ];
 
             if ($this->arquivos_model->edit('documentos', $data, 'idDocumentos', $this->input->post('idDocumentos')) == true) {
                 $this->session->set_flashdata('success', 'Alterações efetuadas com sucesso!');
                 log_info('Alterou um arquivo, ID: ' . $this->input->post('idDocumentos'));
-                redirect(base_url() . 'index.php/arquivos/editar/' . $this->input->post('idDocumentos'));
+                redirect(site_url('arquivos/editar/') . $this->input->post('idDocumentos'));
             } else {
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro.</p></div>';
             }
@@ -195,12 +165,11 @@ class Arquivos extends CI_Controller
 
         $this->data['result'] = $this->arquivos_model->getById($this->uri->segment(3));
         $this->data['view'] = 'arquivos/editarArquivo';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function download($id = null)
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vArquivo')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para visualizar arquivos.');
             redirect(base_url());
@@ -212,13 +181,9 @@ class Arquivos extends CI_Controller
         }
 
         $file = $this->arquivos_model->getById($id);
-
         $this->load->library('zip');
-
         $path = $file->path;
-
         $this->zip->read_file($path);
-
         $this->zip->download('file' . date('d-m-Y-H.i.s') . '.zip');
     }
 
@@ -232,32 +197,24 @@ class Arquivos extends CI_Controller
         $id = $this->input->post('id');
         if ($id == null || !is_numeric($id)) {
             $this->session->set_flashdata('error', 'Erro! O arquivo não pode ser localizado.');
-            redirect(base_url() . 'index.php/arquivos/');
+            redirect(site_url('arquivos'));
         }
 
         $file = $this->arquivos_model->getById($id);
-
         $this->db->where('idDocumentos', $id);
-
         if ($this->db->delete('documentos')) {
-
             $path = $file->path;
             unlink($path);
-
             $this->session->set_flashdata('success', 'Arquivo excluido com sucesso!');
-
             log_info('Removeu um arquivo. ID: ' . $id);
-            redirect(base_url() . 'index.php/arquivos/');
         } else {
-
             $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar excluir o arquivo.');
-            redirect(base_url() . 'index.php/arquivos/');
         }
+        redirect(site_url('arquivos'));
     }
 
     public function do_upload()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aArquivo')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar arquivos.');
             redirect(base_url());
@@ -273,17 +230,16 @@ class Arquivos extends CI_Controller
         $config['encrypt_name'] = true;
 
         if (!is_dir('./assets/arquivos/' . $date)) {
-
             mkdir('./assets/arquivos/' . $date, 0777, true);
         }
 
         $this->load->library('upload', $config);
 
         if (!$this->upload->do_upload()) {
-            $error = array('error' => $this->upload->display_errors());
+            $error = ['error' => $this->upload->display_errors()];
 
             $this->session->set_flashdata('error', 'Erro ao fazer upload do arquivo, verifique se a extensão do arquivo é permitida.');
-            redirect(base_url() . 'index.php/arquivos/adicionar/');
+            redirect(site_url('arquivos/adicionar'));
         } else {
             //$data = array('upload_data' => $this->upload->data());
             return $this->upload->data();

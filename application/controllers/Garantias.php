@@ -1,6 +1,8 @@
-<?php if (!defined('BASEPATH')) { exit('No direct script access allowed'); }
+<?php if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
 
-class Garantias extends CI_Controller
+class Garantias extends MY_Controller
 {
 
     /**
@@ -13,12 +15,8 @@ class Garantias extends CI_Controller
     {
         parent::__construct();
 
-        if ((!session_id()) || (!$this->session->userdata('logado'))) {
-            redirect('mapos/login');
-        }
-
-        $this->load->helper(array('form', 'codegen_helper'));
-        $this->load->model('garantias_model', '', true);
+        $this->load->helper('form');
+        $this->load->model('garantias_model');
         $this->data['menuGarantia'] = 'Garantias';
     }
 
@@ -29,7 +27,6 @@ class Garantias extends CI_Controller
 
     public function gerenciar()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'vGarantia')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para visualizar Termo de Garantia.');
             redirect(base_url());
@@ -37,39 +34,19 @@ class Garantias extends CI_Controller
 
         $this->load->library('pagination');
 
-        $config['base_url'] = base_url() . 'index.php/garantias/gerenciar/';
-        $config['total_rows'] = $this->garantias_model->count('garantias');
-        $config['per_page'] = 10;
-        $config['next_link'] = 'Próxima';
-        $config['prev_link'] = 'Anterior';
-        $config['full_tag_open'] = '<div class="pagination alternate"><ul>';
-        $config['full_tag_close'] = '</ul></div>';
-        $config['num_tag_open'] = '<li>';
-        $config['num_tag_close'] = '</li>';
-        $config['cur_tag_open'] = '<li><a style="color: #2D335B"><b>';
-        $config['cur_tag_close'] = '</b></a></li>';
-        $config['prev_tag_open'] = '<li>';
-        $config['prev_tag_close'] = '</li>';
-        $config['next_tag_open'] = '<li>';
-        $config['next_tag_close'] = '</li>';
-        $config['first_link'] = 'Primeira';
-        $config['last_link'] = 'Última';
-        $config['first_tag_open'] = '<li>';
-        $config['first_tag_close'] = '</li>';
-        $config['last_tag_open'] = '<li>';
-        $config['last_tag_close'] = '</li>';
+        $this->data['configuration']['base_url'] = site_url('garantias/gerenciar/');
+        $this->data['configuration']['total_rows'] = $this->garantias_model->count('garantias');
 
-        $this->pagination->initialize($config);
+        $this->pagination->initialize($this->data['configuration']);
 
-        $this->data['results'] = $this->garantias_model->get('garantias', '*', '', $config['per_page'], $this->uri->segment(3));
+        $this->data['results'] = $this->garantias_model->get('garantias', '*', '', $this->data['configuration']['per_page'], $this->uri->segment(3));
 
         $this->data['view'] = 'garantias/garantias';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function adicionar()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aGarantia')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar Termo de Garantia.');
             redirect(base_url());
@@ -81,31 +58,28 @@ class Garantias extends CI_Controller
         if ($this->form_validation->run('garantias') == false) {
             $this->data['custom_error'] = (validation_errors() ? true : false);
         } else {
-
-            $data = array(
+            $data = [
                 'dataGarantia' => date('Y/m/d'),
                 'refGarantia' => $this->input->post('refGarantia'),
                 'textoGarantia' => $this->input->post('textoGarantia'),
                 'usuarios_id' => $this->session->userdata('id'),
-            );
+            ];
 
             if (is_numeric($id = $this->garantias_model->add('garantias', $data, true))) {
                 log_info('Adicionou uma garantia');
                 $this->session->set_flashdata('success', 'Termo de Garantia adicionado com sucesso.');
-                redirect('garantias/editar/' . $id);
+                redirect(site_url('garantias/editar/') . $id);
             } else {
-
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro.</p></div>';
             }
         }
 
         $this->data['view'] = 'garantias/adicionarGarantia';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function editar()
     {
-
         if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
@@ -122,16 +96,15 @@ class Garantias extends CI_Controller
         if ($this->form_validation->run('garantias') == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
-            $data = array(
+            $data = [
                 'textoGarantia' => $this->input->post('textoGarantia'),
                 'refGarantia' => $this->input->post('refGarantia'),
-            );
+            ];
 
             if ($this->garantias_model->edit('garantias', $data, 'idGarantias', $this->input->post('idGarantias')) == true) {
                 $this->session->set_flashdata('success', 'Termo de garantia editada com sucesso!');
                 log_info('Alterou uma garantia. ID: ' . $this->input->post('idGarantias'));
-                redirect(base_url() . 'index.php/garantias/editar/' . $this->input->post('idGarantias'));
+                redirect(site_url('garantias/editar/') . $this->input->post('idGarantias'));
             } else {
                 $this->data['custom_error'] = '<div class="form_error"><p>Ocorreu um erro</p></div>';
             }
@@ -139,12 +112,11 @@ class Garantias extends CI_Controller
 
         $this->data['result'] = $this->garantias_model->getById($this->uri->segment(3));
         $this->data['view'] = 'garantias/editarGarantia';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function visualizar()
     {
-
         if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
@@ -161,12 +133,11 @@ class Garantias extends CI_Controller
         $this->data['emitente'] = $this->mapos_model->getEmitente();
 
         $this->data['view'] = 'garantias/visualizarGarantia';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function imprimir()
     {
-
         if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
             $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
             redirect('mapos');
@@ -187,38 +158,30 @@ class Garantias extends CI_Controller
 
     public function excluir()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'dGarantia')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para excluir termo de garantia');
             redirect(base_url());
         }
 
-        $ID = $this->input->post('idGarantias');
-        if ($ID == null) {
-
+        $id = $this->input->post('idGarantias');
+        if ($id == null) {
             $this->session->set_flashdata('error', 'Erro ao tentar excluir termo de garantia.');
             redirect(base_url() . 'index.php/garantias/gerenciar/');
         }
 
-        if ($this->garantias_model->delete('garantias', 'idGarantias', $ID) == true) {
-
-            $this->garantias_model->delete('garantias', 'idGarantias', $ID);
+        if ($this->garantias_model->delete('garantias', 'idGarantias', $id) == true) {
+            $this->garantias_model->delete('garantias', 'idGarantias', $id);
             $this->session->set_flashdata('success', 'Termo de garantia excluída com sucesso!');
-            log_info('Removeu uma garantia. ID: ' . $ID);
-
+            log_info('Removeu uma garantia. ID: ' . $id);
         } else {
-
             $this->session->set_flashdata('error', 'Você não pode excluir esse termo de garantia.<br />Verifique se tem alguma OS vinculada a esse termo e remova antes de tentar excluir novamente.');
-
         }
 
-        redirect(base_url() . 'index.php/garantias/gerenciar/');
-
+        redirect(site_url('garantias/gerenciar/'));
     }
 
     public function autoCompleteProduto()
     {
-
         if (isset($_GET['term'])) {
             $q = strtolower($_GET['term']);
             $this->vendas_model->autoCompleteProduto($q);
@@ -227,7 +190,6 @@ class Garantias extends CI_Controller
 
     public function autoCompleteCliente()
     {
-
         if (isset($_GET['term'])) {
             $q = strtolower($_GET['term']);
             $this->vendas_model->autoCompleteCliente($q);
@@ -236,11 +198,9 @@ class Garantias extends CI_Controller
 
     public function autoCompleteUsuario()
     {
-
         if (isset($_GET['term'])) {
             $q = strtolower($_GET['term']);
             $this->vendas_model->autoCompleteUsuario($q);
         }
     }
-
 }

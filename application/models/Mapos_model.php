@@ -8,15 +8,13 @@ class Mapos_model extends CI_Model
      *
      */
 
-    function __construct()
+    public function __construct()
     {
         parent::__construct();
     }
 
-
-    function get($table, $fields, $where = '', $perpage = 0, $start = 0, $one = false, $array = 'array')
+    public function get($table, $fields, $where = '', $perpage = 0, $start = 0, $one = false, $array = 'array')
     {
-
         $this->db->select($fields);
         $this->db->from($table);
         $this->db->limit($perpage, $start);
@@ -26,11 +24,11 @@ class Mapos_model extends CI_Model
 
         $query = $this->db->get();
 
-        $result =  !$one  ? $query->result() : $query->row();
+        $result = !$one ? $query->result() : $query->row();
         return $result;
     }
 
-    function getById($id)
+    public function getById($id)
     {
         $this->db->from('usuarios');
         $this->db->select('usuarios.*, permissoes.nome as permissao');
@@ -43,7 +41,7 @@ class Mapos_model extends CI_Model
     public function alterarSenha($senha)
     {
         $this->db->set('senha', password_hash($senha, PASSWORD_DEFAULT));
-        $this->db->where('idUsuarios',  $this->session->userdata('id'));
+        $this->db->where('idUsuarios', $this->session->userdata('id'));
         $this->db->update('usuarios');
 
         if ($this->db->affected_rows() >= 0) {
@@ -52,9 +50,9 @@ class Mapos_model extends CI_Model
         return false;
     }
 
-    function pesquisar($termo)
+    public function pesquisar($termo)
     {
-        $data = array();
+        $data = [];
         // buscando clientes
         $this->db->like('nomeCliente', $termo);
         $this->db->limit(5);
@@ -78,8 +76,7 @@ class Mapos_model extends CI_Model
         return $data;
     }
 
-
-    function add($table, $data)
+    public function add($table, $data)
     {
         $this->db->insert($table, $data);
         if ($this->db->affected_rows() == '1') {
@@ -89,7 +86,7 @@ class Mapos_model extends CI_Model
         return false;
     }
 
-    function edit($table, $data, $fieldID, $ID)
+    public function edit($table, $data, $fieldID, $ID)
     {
         $this->db->where($fieldID, $ID);
         $this->db->update($table, $data);
@@ -101,7 +98,7 @@ class Mapos_model extends CI_Model
         return false;
     }
 
-    function delete($table, $fieldID, $ID)
+    public function delete($table, $fieldID, $ID)
     {
         $this->db->where($fieldID, $ID);
         $this->db->delete($table);
@@ -112,12 +109,12 @@ class Mapos_model extends CI_Model
         return false;
     }
 
-    function count($table)
+    public function count($table)
     {
         return $this->db->count_all($table);
     }
 
-    function getOsAbertas()
+    public function getOsAbertas()
     {
         $this->db->select('os.*, clientes.nomeCliente');
         $this->db->from('os');
@@ -127,7 +124,7 @@ class Mapos_model extends CI_Model
         return $this->db->get()->result();
     }
 
-    function getOsAguardandoPecas()
+    public function getOsAguardandoPecas()
     {
         $this->db->select('os.*, clientes.nomeCliente');
         $this->db->from('os');
@@ -137,14 +134,13 @@ class Mapos_model extends CI_Model
         return $this->db->get()->result();
     }
 
-    function getProdutosMinimo()
+    public function getProdutosMinimo()
     {
-
-        $sql = "SELECT * FROM produtos WHERE estoque <= estoqueMinimo LIMIT 10";
+        $sql = "SELECT * FROM produtos WHERE estoque <= estoqueMinimo AND estoqueMinimo > 0 LIMIT 10";
         return $this->db->query($sql)->result();
     }
 
-    function getOsEstatisticas()
+    public function getOsEstatisticas()
     {
         $sql = "SELECT status, COUNT(status) as total FROM os GROUP BY status ORDER BY status";
         return $this->db->query($sql)->result();
@@ -152,13 +148,12 @@ class Mapos_model extends CI_Model
 
     public function getEstatisticasFinanceiro()
     {
-        $sql = "SELECT SUM(CASE WHEN baixado = 1 AND tipo = 'receita' THEN valor END) as total_receita, 
+        $sql = "SELECT SUM(CASE WHEN baixado = 1 AND tipo = 'receita' THEN valor END) as total_receita,
                        SUM(CASE WHEN baixado = 1 AND tipo = 'despesa' THEN valor END) as total_despesa,
                        SUM(CASE WHEN baixado = 0 AND tipo = 'receita' THEN valor END) as total_receita_pendente,
                        SUM(CASE WHEN baixado = 0 AND tipo = 'despesa' THEN valor END) as total_despesa_pendente FROM lancamentos";
         return $this->db->query($sql)->row();
     }
-
 
     public function getEmitente()
     {
@@ -167,7 +162,6 @@ class Mapos_model extends CI_Model
 
     public function addEmitente($nome, $cnpj, $ie, $logradouro, $numero, $bairro, $cidade, $uf, $telefone, $email, $logo)
     {
-
         $this->db->set('nome', $nome);
         $this->db->set('cnpj', $cnpj);
         $this->db->set('ie', $ie);
@@ -182,10 +176,8 @@ class Mapos_model extends CI_Model
         return $this->db->insert('emitente');
     }
 
-
     public function editEmitente($id, $nome, $cnpj, $ie, $logradouro, $numero, $bairro, $cidade, $uf, $telefone, $email)
     {
-
         $this->db->set('nome', $nome);
         $this->db->set('cnpj', $cnpj);
         $this->db->set('ie', $ie);
@@ -200,10 +192,8 @@ class Mapos_model extends CI_Model
         return $this->db->update('emitente');
     }
 
-
     public function editLogo($id, $logo)
     {
-
         $this->db->set('url_logo', $logo);
         $this->db->where('id', $id);
         return $this->db->update('emitente');
@@ -215,5 +205,24 @@ class Mapos_model extends CI_Model
         $this->db->where('situacao', 1);
         $this->db->limit(1);
         return $this->db->get('usuarios')->row();
+    }
+
+    /**
+     * Salvar configurações do sistema
+     * @param array $data
+     * @return boolean
+     */
+    public function saveConfiguracao($data)
+    {
+        try {
+            foreach ($data as $key => $valor) {
+                $this->db->set('valor', $valor);
+                $this->db->where('config', $key);
+                $this->db->update('configuracoes');
+            }
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
     }
 }

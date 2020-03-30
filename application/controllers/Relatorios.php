@@ -2,7 +2,7 @@
     exit('No direct script access allowed');
 }
 
-class Relatorios extends CI_Controller
+class Relatorios extends MY_Controller
 {
 
     /**
@@ -14,13 +14,10 @@ class Relatorios extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        if ((!session_id()) || (!$this->session->userdata('logado'))) {
-            redirect('mapos/login');
-        }
 
-        $this->load->model('Relatorios_model', '', true);
-        $this->load->model('Usuarios_model', '', true);
-        $this->load->model('Mapos_model', '', true);
+        $this->load->model('Relatorios_model');
+        $this->load->model('Usuarios_model');
+        $this->load->model('Mapos_model');
 
         $this->data['menuRelatorios'] = 'Relatórios';
     }
@@ -32,13 +29,12 @@ class Relatorios extends CI_Controller
 
     public function clientes()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'rCliente')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para gerar relatórios de clientes.');
             redirect(base_url());
         }
         $this->data['view'] = 'relatorios/rel_clientes';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function produtos()
@@ -48,7 +44,7 @@ class Relatorios extends CI_Controller
             redirect(base_url());
         }
         $this->data['view'] = 'relatorios/rel_produtos';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function clientesCustom()
@@ -158,18 +154,16 @@ class Relatorios extends CI_Controller
 
     public function servicos()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'rServico')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para gerar relatórios de serviços.');
             redirect(base_url());
         }
         $this->data['view'] = 'relatorios/rel_servicos';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function servicosCustom()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'rServico')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para gerar relatórios de serviços.');
             redirect(base_url());
@@ -204,7 +198,7 @@ class Relatorios extends CI_Controller
             redirect(base_url());
         }
         $this->data['view'] = 'relatorios/rel_os';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function osRapid()
@@ -264,14 +258,13 @@ class Relatorios extends CI_Controller
 
     public function financeiro()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'rFinanceiro')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para gerar relatórios financeiros.');
             redirect(base_url());
         }
 
         $this->data['view'] = 'relatorios/rel_financeiro';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function financeiroRapid()
@@ -290,7 +283,6 @@ class Relatorios extends CI_Controller
 
     public function financeiroCustom()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'rFinanceiro')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para gerar relatórios financeiros.');
             redirect(base_url());
@@ -302,6 +294,7 @@ class Relatorios extends CI_Controller
         $situacao = $this->input->get('situacao');
 
         $data['lancamentos'] = $this->Relatorios_model->financeiroCustom($dataInicial, $dataFinal, $tipo, $situacao);
+
         $this->load->helper('mpdf');
         $html = $this->load->view('relatorios/imprimir/imprimirFinanceiro', $data, true);
         pdf_create($html, 'relatorio_financeiro' . date('d/m/y'), true);
@@ -315,7 +308,7 @@ class Relatorios extends CI_Controller
         }
 
         $this->data['view'] = 'relatorios/rel_vendas';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function vendasRapid()

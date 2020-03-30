@@ -1,6 +1,8 @@
-<?php if (!defined('BASEPATH')) {exit('No direct script access allowed');}
+<?php if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
 
-class Financeiro extends CI_Controller
+class Financeiro extends MY_Controller
 {
 
     /**
@@ -12,12 +14,9 @@ class Financeiro extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        if ((!session_id()) || (!$this->session->userdata('logado'))) {
-            redirect('mapos/login');
-        }
-        $this->load->model('financeiro_model', '', true);
+        $this->load->model('financeiro_model');
+        $this->load->helper('codegen_helper');
         $this->data['menuFinanceiro'] = 'financeiro';
-        $this->load->helper(array('codegen_helper'));
     }
     public function index()
     {
@@ -37,7 +36,6 @@ class Financeiro extends CI_Controller
 
         // busca todos os lançamentos
         if ($periodo == 'todos') {
-
             if ($situacao == 'previsto') {
                 $where = 'data_vencimento > "' . date('Y-m-d') . '" AND baixado = "0"';
             } else {
@@ -67,7 +65,6 @@ class Financeiro extends CI_Controller
                     $semana = $this->getThisWeek();
 
                     if (!isset($situacao) || $situacao == 'todos') {
-
                         $where = 'data_vencimento BETWEEN "' . $semana[0] . '" AND "' . $semana[1] . '"';
                     } else {
                         if ($situacao == 'previsto') {
@@ -90,11 +87,9 @@ class Financeiro extends CI_Controller
                     // busca lançamento do mês
 
                     if ($periodo == 'mes') {
-
                         $mes = $this->getThisMonth();
 
                         if (!isset($situacao) || $situacao == 'todos') {
-
                             $where = 'data_vencimento BETWEEN "' . $mes[0] . '" AND "' . $mes[1] . '"';
                         } else {
                             if ($situacao == 'previsto') {
@@ -116,7 +111,6 @@ class Financeiro extends CI_Controller
                         $ano = $this->getThisYear();
 
                         if (!isset($situacao) || $situacao == 'todos') {
-
                             $where = 'data_vencimento BETWEEN "' . $ano[0] . '" AND "' . $ano[1] . '"';
                         } else {
                             if ($situacao == 'previsto') {
@@ -140,40 +134,20 @@ class Financeiro extends CI_Controller
 
         $this->load->library('pagination');
 
-        $config['base_url'] = site_url() . '/financeiro/lancamentos/?periodo=' . $periodo . '&situacao=' . $situacao;
-        $config['total_rows'] = $this->financeiro_model->count('lancamentos', $where);
-        $config['per_page'] = 20;
-        $config['page_query_string'] = true;
-        $config['next_link'] = 'Próxima';
-        $config['prev_link'] = 'Anterior';
-        $config['full_tag_open'] = '<div class="pagination alternate"><ul>';
-        $config['full_tag_close'] = '</ul></div>';
-        $config['num_tag_open'] = '<li>';
-        $config['num_tag_close'] = '</li>';
-        $config['cur_tag_open'] = '<li><a style="color: #2D335B"><b>';
-        $config['cur_tag_close'] = '</b></a></li>';
-        $config['prev_tag_open'] = '<li>';
-        $config['prev_tag_close'] = '</li>';
-        $config['next_tag_open'] = '<li>';
-        $config['next_tag_close'] = '</li>';
-        $config['first_link'] = 'Primeira';
-        $config['last_link'] = 'Última';
-        $config['first_tag_open'] = '<li>';
-        $config['first_tag_close'] = '</li>';
-        $config['last_tag_open'] = '<li>';
-        $config['last_tag_close'] = '</li>';
+        $this->data['configuration']['base_url'] = site_url("financeiro/lancamentos/?periodo=$periodo&situacao=$situacao");
+        $this->data['configuration']['total_rows'] = $this->financeiro_model->count('lancamentos', $where);
+        $this->data['configuration']['page_query_string'] = true;
 
-        $this->pagination->initialize($config);
+        $this->pagination->initialize($this->data['configuration']);
 
-        $this->data['results'] = $this->financeiro_model->get('lancamentos', 'idLancamentos,descricao,valor,data_vencimento,data_pagamento,baixado,cliente_fornecedor,tipo,forma_pgto', $where, $config['per_page'], $this->input->get('per_page'));
+        $this->data['results'] = $this->financeiro_model->get('lancamentos', '*', $where, $this->data['configuration']['per_page'], $this->input->get('per_page'));
 
         $this->data['view'] = 'financeiro/lancamentos';
-        $this->load->view('tema/topo', $this->data);
+        return $this->layout();
     }
 
     public function adicionarReceita()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aLancamento')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar lançamentos.');
             redirect(base_url());
@@ -185,7 +159,6 @@ class Financeiro extends CI_Controller
         if ($this->form_validation->run('receita') == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
             $vencimento = $this->input->post('vencimento');
             $recebimento = $this->input->post('recebimento');
 
@@ -199,7 +172,6 @@ class Financeiro extends CI_Controller
             }
 
             try {
-
                 $vencimento = explode('/', $vencimento);
                 $vencimento = $vencimento[2] . '-' . $vencimento[1] . '-' . $vencimento[0];
             } catch (Exception $e) {
@@ -209,10 +181,10 @@ class Financeiro extends CI_Controller
             $valor = $this->input->post('valor');
 
             if (!validate_money($valor)) {
-                $valor = str_replace(array(',', '.'), array('', ''), $valor);
+                $valor = str_replace([',', '.'], ['', ''], $valor);
             }
 
-            $data = array(
+            $data = [
                 'descricao' => set_value('descricao'),
                 'valor' => $valor,
                 'data_vencimento' => $vencimento,
@@ -221,7 +193,7 @@ class Financeiro extends CI_Controller
                 'cliente_fornecedor' => set_value('cliente'),
                 'forma_pgto' => $this->input->post('formaPgto'),
                 'tipo' => set_value('tipo'),
-            );
+            ];
 
             if ($this->financeiro_model->add('lancamentos', $data) == true) {
                 $this->session->set_flashdata('success', 'Receita adicionada com sucesso!');
@@ -238,7 +210,6 @@ class Financeiro extends CI_Controller
 
     public function adicionarDespesa()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'aLancamento')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para adicionar lançamentos.');
             redirect(base_url());
@@ -250,7 +221,6 @@ class Financeiro extends CI_Controller
         if ($this->form_validation->run('despesa') == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
             $vencimento = $this->input->post('vencimento');
             $pagamento = $this->input->post('pagamento');
 
@@ -264,7 +234,6 @@ class Financeiro extends CI_Controller
             }
 
             try {
-
                 $vencimento = explode('/', $vencimento);
                 $vencimento = $vencimento[2] . '-' . $vencimento[1] . '-' . $vencimento[0];
             } catch (Exception $e) {
@@ -274,10 +243,10 @@ class Financeiro extends CI_Controller
             $valor = $this->input->post('valor');
 
             if (!validate_money($valor)) {
-                $valor = str_replace(array(',', '.'), array('', ''), $valor);
+                $valor = str_replace([',', '.'], ['', ''], $valor);
             }
 
-            $data = array(
+            $data = [
                 'descricao' => set_value('descricao'),
                 'valor' => $valor,
                 'data_vencimento' => $vencimento,
@@ -286,7 +255,7 @@ class Financeiro extends CI_Controller
                 'cliente_fornecedor' => set_value('fornecedor'),
                 'forma_pgto' => $this->input->post('formaPgto'),
                 'tipo' => set_value('tipo'),
-            );
+            ];
 
             if ($this->financeiro_model->add('lancamentos', $data) == true) {
                 $this->session->set_flashdata('success', 'Despesa adicionada com sucesso!');
@@ -322,12 +291,10 @@ class Financeiro extends CI_Controller
         if ($this->form_validation->run() == false) {
             $this->data['custom_error'] = (validation_errors() ? '<div class="form_error">' . validation_errors() . '</div>' : false);
         } else {
-
             $vencimento = $this->input->post('vencimento');
             $pagamento = $this->input->post('pagamento');
 
             try {
-
                 $vencimento = explode('/', $vencimento);
                 $vencimento = $vencimento[2] . '-' . $vencimento[1] . '-' . $vencimento[0];
 
@@ -337,7 +304,7 @@ class Financeiro extends CI_Controller
                 $vencimento = date('Y/m/d');
             }
 
-            $data = array(
+            $data = [
                 'descricao' => $this->input->post('descricao'),
                 'valor' => $this->input->post('valor'),
                 'data_vencimento' => $vencimento,
@@ -346,7 +313,7 @@ class Financeiro extends CI_Controller
                 'cliente_fornecedor' => $this->input->post('fornecedor'),
                 'forma_pgto' => $this->input->post('formaPgto'),
                 'tipo' => $this->input->post('tipo'),
-            );
+            ];
 
             if ($this->financeiro_model->edit('lancamentos', $data, 'idLancamentos', $this->input->post('id')) == true) {
                 $this->session->set_flashdata('success', 'lançamento editado com sucesso!');
@@ -361,7 +328,7 @@ class Financeiro extends CI_Controller
         $this->session->set_flashdata('error', 'Ocorreu um erro ao tentar editar lançamento.');
         redirect($urlAtual);
 
-        $data = array(
+        $data = [
             'descricao' => $this->input->post('descricao'),
             'valor' => $this->input->post('valor'),
             'data_vencimento' => $this->input->post('vencimento'),
@@ -370,13 +337,12 @@ class Financeiro extends CI_Controller
             'cliente_fornecedor' => set_value('fornecedor'),
             'forma_pgto' => $this->input->post('formaPgto'),
             'tipo' => $this->input->post('tipo'),
-        );
+        ];
         print_r($data);
     }
 
     public function excluirLancamento()
     {
-
         if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'dLancamento')) {
             $this->session->set_flashdata('error', 'Você não tem permissão para excluir lançamentos.');
             redirect(base_url());
@@ -385,17 +351,16 @@ class Financeiro extends CI_Controller
         $id = $this->input->post('id');
 
         if ($id == null || !is_numeric($id)) {
-            $json = array('result' => false);
+            $json = ['result' => false];
             echo json_encode($json);
         } else {
-
             $result = $this->financeiro_model->delete('lancamentos', 'idLancamentos', $id);
             if ($result) {
                 log_info('Removeu um lançamento. ID: ' . $id);
-                $json = array('result' => true);
+                $json = ['result' => true];
                 echo json_encode($json);
             } else {
-                $json = array('result' => false);
+                $json = ['result' => false];
                 echo json_encode($json);
             }
         }
@@ -403,34 +368,30 @@ class Financeiro extends CI_Controller
 
     protected function getThisYear()
     {
-
         $dias = date("z");
         $primeiro = date("Y-m-d", strtotime("-" . ($dias) . " day"));
         $ultimo = date("Y-m-d", strtotime("+" . (364 - $dias) . " day"));
-        return array($primeiro, $ultimo);
+        return [$primeiro, $ultimo];
     }
 
     protected function getThisWeek()
     {
-
-        return array(date("Y/m/d", strtotime("last sunday", strtotime("now"))), date("Y/m/d", strtotime("next saturday", strtotime("now"))));
+        return [date("Y/m/d", strtotime("last sunday", strtotime("now"))), date("Y/m/d", strtotime("next saturday", strtotime("now")))];
     }
 
     protected function getLastSevenDays()
     {
-
-        return array(date("Y-m-d", strtotime("-7 day", strtotime("now"))), date("Y-m-d", strtotime("now")));
+        return [date("Y-m-d", strtotime("-7 day", strtotime("now"))), date("Y-m-d", strtotime("now"))];
     }
 
     protected function getThisMonth()
     {
-
         $mes = date('m');
         $ano = date('Y');
         $qtdDiasMes = date('t');
         $inicia = $ano . "-" . $mes . "-01";
 
         $ate = $ano . "-" . $mes . "-" . $qtdDiasMes;
-        return array($inicia, $ate);
+        return [$inicia, $ate];
     }
 }
