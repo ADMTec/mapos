@@ -26,7 +26,7 @@
                 </span>
                 <h5>Cadastro de OS</h5>
             </div>
-            <div class="widget-content nopadding">
+            <div class="widget-content nopadding tab-content">
                 <div class="span12" id="divProdutosServicos" style=" margin-left: 0">
 
                     <ul class="nav nav-tabs">
@@ -62,6 +62,7 @@
                                                 <option value="Finalizado">Finalizado</option>
                                                 <option value="Cancelado">Cancelado</option>
                                                 <option value="Aguardando Peças">Aguardando Peças</option>
+                                                <option value="Aprovado">Aprovado</option>
                                             </select>
                                         </div>
                                         <div class="span3">
@@ -73,9 +74,9 @@
                                             <input id="dataFinal" autocomplete="off" class="span12 datepicker" type="text" name="dataFinal" value="" />
                                         </div>
                                         <div class="span3">
-                                            <label for="garantia">Garantia</label>
-                                            <input id="garantia" type="text" class="span12" name="garantia" value="" />
-
+                                            <label for="garantia">Garantia (dias)</label>
+                                            <input id="garantia" type="number" min="0" max="9999" class="span12" name="garantia" value="" />
+                                            <?php echo form_error('garantia'); ?>
                                             <label for="termoGarantia">Termo Garantia</label>
                                             <input id="termoGarantia" class="span12" type="text" name="termoGarantia" value="" />
                                             <input id="garantias_id" class="span12" type="hidden" name="garantias_id" value="" />

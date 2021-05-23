@@ -1,7 +1,7 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
-
 # production
 /install/files
+/docker/data
 
 # misc
 .DS_Store
@@ -22,5 +22,8 @@ application/vendor/
 vendor/
 .idea/
 .php_cs.cache
+.php-cs-fixer.cache
 application/logs/*
 ci_sessions/
+
+uploads

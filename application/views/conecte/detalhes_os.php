@@ -22,7 +22,7 @@
                 </span>
                 <h5>Detalhes OS</h5>
             </div>
-            <div class="widget-content nopadding">
+            <div class="widget-content nopadding tab-content">
 
 
                 <div class="span12" id="divProdutosServicos" style=" margin-left: 0">
@@ -108,6 +108,7 @@
                                     <thead>
                                         <tr>
                                             <th>Produto</th>
+                                            <th>Preço unit.</th>
                                             <th>Quantidade</th>
                                             <th>Sub-total</th>
                                         </tr>
@@ -119,13 +120,14 @@
                                             $total = $total + $p->subTotal;
                                             echo '<tr>';
                                             echo '<td>' . $p->descricao . '</td>';
+                                            echo '<td>R$ ' . number_format($p->preco, 2, ',', '.') . '</td>';
                                             echo '<td>' . $p->quantidade . '</td>';
                                             echo '<td>R$ ' . number_format($p->subTotal, 2, ',', '.') . '</td>';
                                             echo '</tr>';
                                         } ?>
 
                                         <tr>
-                                            <td colspan="2" style="text-align: right"><strong>Total:</strong></td>
+                                            <td colspan="3" style="text-align: right"><strong>Total:</strong></td>
                                             <td><strong>R$
                                                     <?php echo number_format($total, 2, ',', '.'); ?><input type="hidden" id="total-venda" value="<?php echo number_format($total, 2); ?>"></strong></td>
                                         </tr>
@@ -144,6 +146,8 @@
                                         <thead>
                                             <tr>
                                                 <th>Serviço</th>
+                                                <th>Preço unit.</th>
+                                                <th>Quantidade</th>
                                                 <th>Sub-total</th>
                                             </tr>
                                         </thead>
@@ -151,16 +155,17 @@
                                             <?php
                                             $total = 0;
                                             foreach ($servicos as $s) {
-                                                $preco = $s->preco;
-                                                $total = $total + $preco;
+                                                $total = $total + $s->subTotal;
                                                 echo '<tr>';
                                                 echo '<td>' . $s->nome . '</td>';
                                                 echo '<td>R$ ' . number_format($s->preco, 2, ',', '.') . '</td>';
+                                                echo '<td>' . $s->quantidade . '</td>';
+                                                echo '<td>R$ ' . number_format($s->subTotal, 2, ',', '.') . '</td>';
                                                 echo '</tr>';
                                             } ?>
 
                                             <tr>
-                                                <td colspan="1" style="text-align: right"><strong>Total:</strong></td>
+                                                <td colspan="3" style="text-align: right"><strong>Total:</strong></td>
                                                 <td><strong>R$
                                                         <?php echo number_format($total, 2, ',', '.'); ?><input type="hidden" id="total-servico" value="<?php echo number_format($total, 2); ?>"></strong></td>
                                             </tr>
@@ -196,29 +201,22 @@
 
                                 <div class="span12" id="divAnexos" style="margin-left: 0">
                                     <?php
-
-                                    if ($anexos == null) {
-                                        echo '<div class="alert alert-danger">Nenhum item foi anexado a esta ordem de serviço</div>';
-                                    }
-                                    $cont = 1;
-                                    $flag = 5;
                                     foreach ($anexos as $a) {
                                         if ($a->thumb == null) {
                                             $thumb = base_url() . 'assets/img/icon-file.png';
                                             $link = base_url() . 'assets/img/icon-file.png';
                                         } else {
-                                            $thumb = base_url() . 'assets/anexos/thumbs/' . $a->thumb;
-                                            $link = $a->url . $a->anexo;
+                                            $thumb = $a->url . '/thumbs/' . $a->thumb;
+                                            $link = $a->url . '/' . $a->anexo;
                                         }
-
-                                        if ($cont == $flag) {
-                                            echo '<div style="margin-left: 0" class="span3"><a href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo" data-toggle="modal"><img src="' . $thumb . '" alt=""></a></div>';
-                                            $flag += 4;
-                                        } else {
-                                            echo '<div class="span3"><a href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo" data-toggle="modal"><img src="' . $thumb . '" alt=""><p align="center">' . $a->anexo . '</p></a></div>';
-                                        }
-                                        $cont++;
-                                    } ?>
+                                        echo '<div class="span3" style="min-height: 150px; margin-left: 0">
+                                                    <a style="min-height: 150px;" href="#modal-anexo" imagem="' . $a->idAnexos . '" link="' . $link . '" role="button" class="btn anexo span12" data-toggle="modal">
+                                                        <img src="' . $thumb . '" alt="">
+                                                    </a>
+                                                    <span>' . $a->anexo . '</span>
+                                                </div>';
+                                    }
+                                    ?>
                                 </div>
 
                             </div>
@@ -259,7 +257,6 @@
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">Fechar</button>
         <a href="" id-imagem="" class="btn btn-inverse" id="download">Download</a>
-        <a href="" link="" class="btn btn-danger" id="excluir-anexo">Excluir Anexo</a>
     </div>
 </div>
 
@@ -278,7 +275,7 @@
 
             <div class="span12 alert alert-info" style="margin-left: 0"> Obrigatório o preenchimento dos campos com asterisco.</div>
             <div class="span12" style="margin-left: 0">
-                <label for="descricao">Descrição</label>
+                <label for="descricao">Descrição*</label>
                 <input class="span12" id="descricao" type="text" name="descricao" value="Fatura de Venda - #<?php echo $result->idOs; ?> " />
 
             </div>
@@ -324,6 +321,7 @@
                             <option value="Boleto">Boleto</option>
                             <option value="Depósito">Depósito</option>
                             <option value="Débito">Débito</option>
+                            <option value="Pix">Pix</option>
                         </select>
                     </div>
 
@@ -344,5 +342,13 @@
         $('.editor').trumbowyg({
             lang: 'pt_br'
         });
+    });
+
+    $(document).on('click', '.anexo', function(event) {
+        event.preventDefault();
+        var link = $(this).attr('link');
+        var id = $(this).attr('imagem');
+        $("#div-visualizar-anexo").html('<img src="' + link + '" alt="">');
+        $("#download").attr('href', "<?php echo base_url(); ?>index.php/mine/downloadanexo/" + id);
     });
 </script>

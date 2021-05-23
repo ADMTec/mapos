@@ -34,7 +34,7 @@
                 </span>
                 <h5>Editar Produto</h5>
             </div>
-            <div class="widget-content nopadding">
+            <div class="widget-content nopadding tab-content">
                 <?php echo $custom_error; ?>
                 <form action="<?php echo current_url(); ?>" id="formProduto" method="post" class="form-horizontal">
                     <div class="control-group">
@@ -68,7 +68,7 @@
                     <div class="control-group">
                         <label for="precoCompra" class="control-label">Preço de Compra<span class="required">*</span></label>
                         <div class="controls">
-                            <input id="precoCompra" class="money" type="text" name="precoCompra" value="<?php echo $result->precoCompra; ?>" />
+                            <input id="precoCompra" class="money" type="text" name="precoCompra" value="<?php echo $result->precoCompra; ?>" /> Margem <input style="width: 3em;" id="num2" type="text" placeholder="%" onblur="calcular()" maxlength="3" size="2" /><br /><strong><span style="color: red" id="resultado"></span><strong>
                         </div>
                     </div>
 
@@ -82,14 +82,7 @@
                     <div class="control-group">
                         <label for="unidade" class="control-label">Unidade<span class="required">*</span></label>
                         <div class="controls">
-                            <select id="unidade" name="unidade">
-                                <option value="UN" <?= ($result->unidade == 'UN') ? 'selected' : '' ?>>Unidade</option>
-                                <option value="KG" <?= ($result->unidade == 'KG') ? 'selected' : '' ?>>Kilograma</option>
-                                <option value="LT" <?= ($result->unidade == 'LT') ? 'selected' : '' ?>>Litro</option>
-                                <option value="CX" <?= ($result->unidade == 'CX') ? 'selected' : '' ?>>Caixa</option>
-                                <option value="M2" <?= ($result->unidade == 'M2') ? 'selected' : '' ?>>M²</option>
-                                <option value="OT" <?= ($result->unidade == 'OT') ? 'selected' : '' ?>>Outro</option>
-                            </select>
+                            <select id="unidade" name="unidade"></select>
                         </div>
                     </div>
 
@@ -128,9 +121,26 @@
 <script src="<?php echo base_url() ?>assets/js/jquery.validate.js"></script>
 <script src="<?php echo base_url(); ?>assets/js/maskmoney.js"></script>
 <script type="text/javascript">
+    function calcular() {
+        var precoCompra = Number(document.getElementById("precoCompra").value);
+        var num2 = Number(document.getElementById("num2").value);
+        var elemResult = document.getElementById("resultado");
+
+        if (elemResult.textContent === undefined) {
+            elemResult.textContent = "Preço de venda: R$ " + String(precoCompra * num2 / 100 + precoCompra) + ".	";
+        } else { // IE
+            elemResult.innerText = "(Preço de venda: R$ " + String(precoCompra * num2 / 100 + precoCompra) + ")";
+        }
+    }
+
     $(document).ready(function() {
         $(".money").maskMoney();
-
+        $.getJSON('<?php echo base_url() ?>assets/json/tabela_medidas.json', function(data) {
+            for (i in data.medidas) {
+                $('#unidade').append(new Option(data.medidas[i].descricao, data.medidas[i].sigla));
+                $("#unidade option[value=" + '<?php echo $result->unidade; ?>' + "]").prop("selected", true);
+            }
+        });
         $('#formProduto').validate({
             rules: {
                 descricao: {

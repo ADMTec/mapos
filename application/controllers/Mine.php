@@ -45,7 +45,7 @@ class Mine extends CI_Controller
             $cliente = $this->db->get('clientes');
             if ($cliente->num_rows() > 0) {
                 $cliente = $cliente->row();
-                $dados = ['nome' => $cliente->nomeCliente, 'cliente_id' => $cliente->idClientes, 'conectado' => true];
+                $dados = ['nome' => $cliente->nomeCliente, 'cliente_id' => $cliente->idClientes, 'email' => $cliente->email, 'conectado' => true, 'isCliente' => true];
                 $this->session->set_userdata($dados);
 
                 if ($ajax == true) {
@@ -114,6 +114,7 @@ class Mine extends CI_Controller
                 'email' => $this->input->post('email'),
                 'rua' => $this->input->post('rua'),
                 'numero' => $this->input->post('numero'),
+                'complemento' => $this->input->post('complemento'),
                 'bairro' => $this->input->post('bairro'),
                 'cidade' => $this->input->post('cidade'),
                 'estado' => $this->input->post('estado'),
@@ -172,6 +173,92 @@ class Mine extends CI_Controller
         $this->load->view('conecte/template', $data);
     }
 
+    public function cobrancas()
+    {
+        if (!session_id() || !$this->session->userdata('conectado')) {
+            redirect('mine');
+        }
+
+        $this->load->library('pagination');
+        $this->load->config('payment_gateways');
+
+        $data['menuCobrancas'] = 'cobrancas';
+
+        $config['base_url'] = base_url() . 'index.php/mine/cobrancas/';
+        $config['total_rows'] = $this->Conecte_model->count('cobrancas', $this->session->userdata('cliente_id'));
+        $config['per_page'] = 10;
+        $config['next_link'] = 'Próxima';
+        $config['prev_link'] = 'Anterior';
+        $config['full_tag_open'] = '<div class="pagination alternate"><ul>';
+        $config['full_tag_close'] = '</ul></div>';
+        $config['num_tag_open'] = '<li>';
+        $config['num_tag_close'] = '</li>';
+        $config['cur_tag_open'] = '<li><a style="color: #2D335B"><b>';
+        $config['cur_tag_close'] = '</b></a></li>';
+        $config['prev_tag_open'] = '<li>';
+        $config['prev_tag_close'] = '</li>';
+        $config['next_tag_open'] = '<li>';
+        $config['next_tag_close'] = '</li>';
+        $config['first_link'] = 'Primeira';
+        $config['last_link'] = 'Última';
+        $config['first_tag_open'] = '<li>';
+        $config['first_tag_close'] = '</li>';
+        $config['last_tag_open'] = '<li>';
+        $config['last_tag_close'] = '</li>';
+
+        $this->pagination->initialize($config);
+
+        $data['results'] = $this->Conecte_model->getCobrancas('cobrancas', '*', '', $config['per_page'], $this->uri->segment(3), '', '', $this->session->userdata('cliente_id'));
+        $data['output'] = 'conecte/cobrancas';
+
+        $this->load->view('conecte/template', $data);
+    }
+
+    public function atualizarcobranca($id = null)
+    {
+        if (!session_id() || !$this->session->userdata('conectado')) {
+            redirect('mine');
+        }
+
+        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+            redirect('mapos');
+        }
+
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'eCobranca')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para atualizar cobrança.');
+            redirect(base_url());
+        }
+
+        $this->load->model('cobrancas_model');
+        $this->cobrancas_model->atualizarStatus($this->uri->segment(3));
+
+        redirect(site_url('mine/cobrancas/'));
+    }
+
+    public function enviarcobranca()
+    {
+        if (!session_id() || !$this->session->userdata('conectado')) {
+            redirect('mine');
+        }
+
+        if (!$this->uri->segment(3) || !is_numeric($this->uri->segment(3))) {
+            $this->session->set_flashdata('error', 'Item não pode ser encontrado, parâmetro não foi passado corretamente.');
+            redirect('mapos');
+        }
+
+        if (!$this->permission->checkPermission($this->session->userdata('permissao'), 'eCobranca')) {
+            $this->session->set_flashdata('error', 'Você não tem permissão para atualizar cobrança.');
+            redirect(base_url());
+        }
+
+        $this->load->model('cobrancas_model');
+        $this->cobrancas_model->enviarEmail($this->uri->segment(3));
+        $this->session->set_flashdata('success', 'Email adicionado na fila.');
+
+        redirect(site_url('mine/cobrancas/'));
+    }
+
     public function os()
     {
         if (!session_id() || !$this->session->userdata('conectado')) {
@@ -221,6 +308,7 @@ class Mine extends CI_Controller
         $this->data['custom_error'] = '';
         $this->load->model('mapos_model');
         $this->load->model('os_model');
+
         $data['result'] = $this->os_model->getById($this->uri->segment(3));
         $data['produtos'] = $this->os_model->getProdutos($this->uri->segment(3));
         $data['servicos'] = $this->os_model->getServicos($this->uri->segment(3));
@@ -233,6 +321,22 @@ class Mine extends CI_Controller
 
         $data['output'] = 'conecte/visualizar_os';
         $this->load->view('conecte/template', $data);
+    }
+
+    public function gerarPagamentoGerencianetBoleto()
+    {
+        $json = ['code' => 4001, 'error' => 'Erro interno' , 'errorDescription' => 'Cobrança não pode ser gerada pelo lado do cliente'];
+        print_r(json_encode($json));
+
+        return;
+    }
+
+    public function gerarPagamentoGerencianetLink()
+    {
+        $json = ['code' => 4001, 'error' => 'Erro interno' , 'errorDescription' => 'Cobrança não pode ser gerada pelo lado do cliente'];
+        print_r(json_encode($json));
+
+        return;
     }
 
     public function imprimirOs($id = null)
@@ -268,6 +372,7 @@ class Mine extends CI_Controller
         $data['custom_error'] = '';
         $this->load->model('mapos_model');
         $this->load->model('vendas_model');
+
         $data['result'] = $this->vendas_model->getById($this->uri->segment(3));
         $data['produtos'] = $this->vendas_model->getProdutos($this->uri->segment(3));
         $data['emitente'] = $this->mapos_model->getEmitente();
@@ -278,6 +383,7 @@ class Mine extends CI_Controller
         }
 
         $data['output'] = 'conecte/visualizar_compra';
+
         $this->load->view('conecte/template', $data);
     }
 
@@ -430,6 +536,7 @@ class Mine extends CI_Controller
                 'celular' => $this->input->post('celular'),
                 'email' => set_value('email'),
                 'rua' => set_value('rua'),
+                'complemento' => set_value('complemento'),
                 'numero' => set_value('numero'),
                 'bairro' => set_value('bairro'),
                 'cidade' => set_value('cidade'),
@@ -447,6 +554,19 @@ class Mine extends CI_Controller
         }
         $data = '';
         $this->load->view('conecte/cadastrar', $data);
+    }
+
+    public function downloadanexo($id = null)
+    {
+        if ($id != null && is_numeric($id)) {
+            $this->db->where('idAnexos', $id);
+            $file = $this->db->get('anexos', 1)->row();
+
+            $this->load->library('zip');
+            $path = $file->path;
+            $this->zip->read_file($path . '/' . $file->anexo);
+            $this->zip->download('file' . date('d-m-Y-H.i.s') . '.zip');
+        }
     }
 }
 
